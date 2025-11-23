@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulator Interaktif</title>
+    <style>
+        :root {
+            font-family: "Segoe UI", Roboto, Arial, sans-serif;
+            --bg: radial-gradient(circle at top, #faf2dd 0%, #f9adb7 45%, #e981a4 100%);
+            --panel: #f4c5d7;
+            --panel-accent: #fde9ef;
+            --border: #f4c5d7;
+            --primary: #e981a4;
+            --primary-dark: #c15f82;
+            --accent: #f9adb7;
+            --text: #3a1d34;
+            --text-muted: #7c4c63;
+            --soft-white: #fffdfc;
+            --display-bg: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 2rem 1rem;
+        }
+
+        .app-shell {
+            width: min(1100px, 100%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .hero {
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 20px;
+            padding: 1.5rem;
+            box-shadow: 0 20px 40px rgba(78, 25, 53, 0.12);
+            backdrop-filter: blur(6px);
+        }
+
+        .hero h1 {
+            margin: 0 0 0.35rem 0;
+            font-size: clamp(1.8rem, 4vw, 2.4rem);
+        }
+
+        .hero p {
+            margin: 0;
+            color: var(--text-muted);
+            font-size: 1rem;
+        }
+
+        .calculator {
+            background: var(--panel);
+            width: min(820px, 100%);
+            border-radius: 22px;
+            box-shadow: 0 20px 45px rgba(233, 129, 164, 0.26);
+            padding: 1.5rem;
+            display: grid;
+            gap: 1rem;
+            grid-template-columns: 1.8fr 1fr;
+            position: relative;
+            overflow: visible;
+            margin: 0 auto;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .display {
+            grid-column: 1 / -1;
+            background: var(--display-bg);
+            color: var(--text);
+            border-radius: 18px;
+            padding: 1.25rem 1.4rem;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 15px 35px rgba(76, 29, 53, 0.08);
+        }
+
+        .expression {
+            font-size: 1rem;
+            letter-spacing: 0.05em;
+            opacity: 0.6;
+            text-align: right;
+            min-height: 1.2em;
+        }
+
+        .main-value {
+            font-size: clamp(2.5rem, 4vw, 3.8rem);
+            text-align: right;
+            line-height: 1.2;
+            word-wrap: break-word;
+        }
+
+        .panels {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .site-footer {
+            text-align: center;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            color: var(--soft-white);
+            padding: 0.5rem 0;
+        }
+
+        .memory-panel,
+        .history-panel {
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1rem 1.25rem;
+            background: var(--panel-accent);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+        }
+
+        .memory-panel {
+            position: relative;
+            padding-top: 1.75rem;
+        }
+
+        .memory-panel h3,
+        .history-panel h3 {
+            margin: 0 0 0.75rem 0;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .memory-panel p {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .memory-indicator {
+            font-weight: 600;
+            color: var(--primary);
+            min-height: 1.2em;
+        }
+
+        .history-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            border-bottom: 1px dashed var(--border);
+            padding-bottom: 0.4rem;
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .memory-buttons,
+        .buttons {
+            display: grid;
+            gap: 0.6rem;
+            grid-auto-rows: minmax(56px, auto);
+        }
+
+        .memory-buttons {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
+        .buttons {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
+        button {
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            padding: 0.65rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease, border-color 120ms ease;
+            background: var(--soft-white);
+            color: var(--text);
+            box-shadow: 0 8px 18px rgba(228, 128, 164, 0.12);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+
+        button:hover {
+            background: #fff8fb;
+        }
+
+        button:active {
+            transform: scale(0.97);
+            box-shadow: inset 0 0 0 2px rgba(233, 129, 164, 0.18);
+        }
+
+        button:focus-visible {
+            outline: 3px solid rgba(233, 129, 164, 0.55);
+            outline-offset: 2px;
+        }
+
+        .btn-operator {
+            border-color: #e981a4;
+            color: #a1365c;
+        }
+
+        .btn-action {
+            border-color: #fec9c3;
+            color: #8a3a2d;
+        }
+
+        .btn-equals {
+            border-color: #e981a4;
+            background: #fffafc;
+            color: #c15f82;
+            grid-column: span 2;
+            box-shadow: 0 12px 24px rgba(233, 129, 164, 0.35);
+        }
+
+        .btn-zero {
+            grid-column: span 2;
+        }
+
+        @media (max-width: 960px) {
+            .calculator {
+                grid-template-columns: 1fr;
+            }
+
+            .panels {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+
+            .memory-panel,
+            .history-panel {
+                flex: 1 1 260px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 0.75rem 0.5rem;
+            }
+
+            .calculator {
+                padding: 1.1rem;
+            }
+
+            .buttons,
+            .memory-buttons {
+                gap: 0.45rem;
+                grid-auto-rows: minmax(52px, auto);
+            }
+
+            button {
+                border-radius: 10px;
+                font-size: 0.95rem;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="app-shell">
+        <header class="hero">
+            <h1>Kalkulator Interaktif</h1>
+            <p>Hitung cepat dengan riwayat dan memori</p>
+        </header>
+
+        <main class="calculator">
+        <section class="display" aria-live="polite">
+            <div id="expressionDisplay" class="expression">&nbsp;</div>
+            <div id="mainDisplay" class="main-value">0</div>
+        </section>
+
+        <section class="controls">
+            <div class="memory-buttons" aria-label="Fungsi memori">
+                <button type="button" data-memory="MC">MC</button>
+                <button type="button" data-memory="MR">MR</button>
+                <button type="button" data-memory="M+">M+</button>
+                <button type="button" data-memory="M-">M-</button>
+            </div>
+            <div class="buttons" aria-label="Tombol kalkulator">
+                <button type="button" class="btn-action" data-action="clear">C</button>
+                <button type="button" class="btn-action" data-action="clear-entry">CE</button>
+                <button type="button" class="btn-action" data-action="backspace">⌫</button>
+                <button type="button" class="btn-operator" data-operator="/">÷</button>
+
+                <button type="button" data-number="7">7</button>
+                <button type="button" data-number="8">8</button>
+                <button type="button" data-number="9">9</button>
+                <button type="button" class="btn-operator" data-operator="*">×</button>
+
+                <button type="button" data-number="4">4</button>
+                <button type="button" data-number="5">5</button>
+                <button type="button" data-number="6">6</button>
+                <button type="button" class="btn-operator" data-operator="-">−</button>
+
+                <button type="button" data-number="1">1</button>
+                <button type="button" data-number="2">2</button>
+                <button type="button" data-number="3">3</button>
+                <button type="button" class="btn-operator" data-operator="+">+</button>
+
+                <button type="button" class="btn-action" data-action="sign">±</button>
+                <button type="button" data-number="0" class="btn-zero">0</button>
+                <button type="button" data-action="decimal">.</button>
+                <button type="button" class="btn-equals" data-action="equals">=</button>
+            </div>
+        </section>
+
+        <section class="panels">
+            <article class="memory-panel">
+                <h3>Status Memori</h3>
+                <div id="memoryIndicator" class="memory-indicator">Tidak ada data</div>
+                <p id="memoryValue" aria-live="polite">0</p>
+            </article>
+
+            <article class="history-panel">
+                <h3>Riwayat (5 terakhir)</h3>
+                <ul id="historyList" class="history-list" aria-live="polite">
+                    <li class="history-item">Belum ada perhitungan</li>
+                </ul>
+            </article>
+        </section>
+        </main>
+
+        <footer class="site-footer">
+            <span>© 2025 Puan Akeyla • Dibuat untuk praktikum Pemrograman Web</span>
+        </footer>
+    </div>
+
+    <script>
+        const expressionDisplay = document.getElementById('expressionDisplay');
+        const mainDisplay = document.getElementById('mainDisplay');
+        const historyList = document.getElementById('historyList');
+        const memoryIndicator = document.getElementById('memoryIndicator');
+        const memoryValueLabel = document.getElementById('memoryValue');
+
+        let currentInput = '0';
+        let expression = '';
+        let tokens = [];
+        let shouldResetInput = false;
+        let isErrorState = false;
+        let memoryValue = 0;
+        const history = [];
+
+        const buttonArea = document.querySelector('.calculator');
+
+        buttonArea.addEventListener('click', (event) => {
+            const target = event.target;
+            if (!(target instanceof HTMLButtonElement)) return;
+
+            if (target.dataset.number) {
+                appendNumber(target.dataset.number);
+                return;
+            }
+
+            if (target.dataset.operator) {
+                setOperator(target.dataset.operator);
+                return;
+            }
+
+            const action = target.dataset.action;
+            if (!action) return;
+
+            const actionMap = {
+                'clear': clearAll,
+                'clear-entry': clearEntry,
+                'decimal': addDecimal,
+                'equals': evaluate,
+                'sign': toggleSign,
+                'backspace': backspace
+            };
+
+            if (actionMap[action]) {
+                actionMap[action]();
+            }
+        });
+
+        document.querySelector('.memory-buttons').addEventListener('click', (event) => {
+            const target = event.target;
+            if (!(target instanceof HTMLButtonElement)) return;
+            handleMemory(target.dataset.memory);
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Shift') return;
+
+            if (/^[0-9]$/.test(event.key)) {
+                appendNumber(event.key);
+                return;
+            }
+
+            if (['+', '-', '*', '/'].includes(event.key)) {
+                event.preventDefault();
+                setOperator(event.key);
+                return;
+            }
+
+            if (event.key === 'Enter' || event.key === '=') {
+                event.preventDefault();
+                evaluate();
+                return;
+            }
+
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                clearAll();
+                return;
+            }
+
+            if (event.key === 'Backspace') {
+                event.preventDefault();
+                backspace();
+                return;
+            }
+
+            if (event.key === '.') {
+                event.preventDefault();
+                addDecimal();
+            }
+        });
+
+        function appendNumber(number) {
+            resetIfError();
+            prepareForNewEntry();
+            if (currentInput === '0' && number !== '.') {
+                currentInput = number;
+            } else {
+                currentInput += number;
+            }
+            updateDisplay();
+        }
+
+        function addDecimal() {
+            resetIfError();
+            prepareForNewEntry(true);
+            if (!currentInput.includes('.')) {
+                currentInput += '.';
+                updateDisplay();
+            }
+        }
+
+        function toggleSign() {
+            resetIfError();
+            prepareForNewEntry();
+            if (currentInput === '0') return;
+            currentInput = currentInput.startsWith('-') ? currentInput.slice(1) : `-${currentInput}`;
+            updateDisplay();
+        }
+
+        function setOperator(operator) {
+            resetIfError();
+            commitCurrentValue();
+
+            if (tokens.length === 0) {
+                tokens.push(parseFloat(currentInput));
+            }
+
+            const lastToken = tokens[tokens.length - 1];
+            if (typeof lastToken === 'string') {
+                tokens[tokens.length - 1] = operator;
+            } else {
+                tokens.push(operator);
+            }
+
+            shouldResetInput = true;
+            expression = '';
+            updateDisplay();
+        }
+
+        function evaluate() {
+            resetIfError();
+            commitCurrentValue();
+
+            if (tokens.length === 0) {
+                return;
+            }
+
+            if (typeof tokens[tokens.length - 1] === 'string') {
+                tokens.pop();
+            }
+
+            if (tokens.length === 0) {
+                return;
+            }
+
+            const tokensForEval = tokens.map(token => token);
+            const evaluation = evaluateTokensWithPrecedence(tokensForEval);
+            if (evaluation.error) {
+                triggerError(evaluation.error);
+                return;
+            }
+
+            const expressionText = tokensForEval
+                .map(token => typeof token === 'number' ? formatNumber(token) : symbolForOperator(token))
+                .join(' ');
+
+            const resultValue = evaluation.value;
+            currentInput = resultValue.toString();
+            expression = `${expressionText} =`;
+            shouldResetInput = true;
+            tokens = [];
+            logHistory(`${expression} ${formatNumber(resultValue)}`);
+            updateDisplay();
+        }
+
+        function symbolForOperator(operator) {
+            switch (operator) {
+                case '+': return '+';
+                case '-': return '−';
+                case '*': return '×';
+                case '/': return '÷';
+                default: return operator;
+            }
+        }
+
+        function clearAll() {
+            currentInput = '0';
+            expression = '';
+            tokens = [];
+            shouldResetInput = false;
+            isErrorState = false;
+            updateDisplay();
+        }
+
+        function clearEntry() {
+            resetIfError();
+            currentInput = '0';
+            updateDisplay();
+        }
+
+        function backspace() {
+            resetIfError();
+            if (shouldResetInput) {
+                return;
+            }
+            if (currentInput.length <= 1 || (currentInput.length === 2 && currentInput.startsWith('-'))) {
+                currentInput = '0';
+            } else {
+                currentInput = currentInput.slice(0, -1);
+            }
+            updateDisplay();
+        }
+
+        function handleMemory(action) {
+            resetIfError();
+            const currentValue = parseFloat(currentInput) || 0;
+            switch (action) {
+                case 'MC':
+                    memoryValue = 0;
+                    break;
+                case 'MR':
+                    currentInput = memoryValue.toString();
+                    shouldResetInput = true;
+                    break;
+                case 'M+':
+                    memoryValue += currentValue;
+                    break;
+                case 'M-':
+                    memoryValue -= currentValue;
+                    break;
+            }
+            updateMemoryDisplay();
+            updateDisplay();
+        }
+
+        function updateMemoryDisplay() {
+            memoryIndicator.textContent = memoryValue === 0 ? 'Tidak ada data' : 'Memori aktif';
+            memoryValueLabel.textContent = formatNumber(memoryValue);
+        }
+
+        function logHistory(entry) {
+            history.unshift(entry);
+            if (history.length > 5) {
+                history.pop();
+            }
+            renderHistory();
+        }
+
+        function renderHistory() {
+            historyList.innerHTML = '';
+            if (history.length === 0) {
+                historyList.innerHTML = '<li class="history-item">Belum ada perhitungan</li>';
+                return;
+            }
+            history.forEach(item => {
+                const li = document.createElement('li');
+                li.className = 'history-item';
+                li.textContent = item;
+                historyList.appendChild(li);
+            });
+        }
+
+        function commitCurrentValue() {
+            const value = parseFloat(currentInput);
+            if (Number.isNaN(value)) {
+                return null;
+            }
+
+            if (shouldResetInput && typeof tokens[tokens.length - 1] === 'string') {
+                return value;
+            }
+
+            if (tokens.length === 0) {
+                tokens.push(value);
+            } else {
+                const lastToken = tokens[tokens.length - 1];
+                if (typeof lastToken === 'string') {
+                    tokens.push(value);
+                } else {
+                    tokens[tokens.length - 1] = value;
+                }
+            }
+            return value;
+        }
+
+        function buildExpressionPreview() {
+            const parts = tokens.map(token =>
+                typeof token === 'number'
+                    ? formatNumber(token)
+                    : symbolForOperator(token)
+            );
+
+            const shouldShowCurrent = tokens.length === 0 || !shouldResetInput;
+
+            if (shouldShowCurrent) {
+                parts.push(formatNumber(currentInput));
+            }
+
+            return parts.join(' ').trim();
+        }
+
+        function evaluateTokensWithPrecedence(tokenList) {
+            if (tokenList.length === 0) {
+                return { error: 'Ekspresi tidak lengkap' };
+            }
+
+            const precedence = { '+': 1, '-': 1, '*': 2, '/': 2 };
+            const outputQueue = [];
+            const operatorStack = [];
+
+            for (const token of tokenList) {
+                if (typeof token === 'number') {
+                    outputQueue.push(token);
+                    continue;
+                }
+
+                while (
+                    operatorStack.length > 0 &&
+                    precedence[operatorStack[operatorStack.length - 1]] >= precedence[token]
+                ) {
+                    outputQueue.push(operatorStack.pop());
+                }
+                operatorStack.push(token);
+            }
+
+            while (operatorStack.length > 0) {
+                outputQueue.push(operatorStack.pop());
+            }
+
+            const evaluationStack = [];
+
+            for (const item of outputQueue) {
+                if (typeof item === 'number') {
+                    evaluationStack.push(item);
+                    continue;
+                }
+
+                const b = evaluationStack.pop();
+                const a = evaluationStack.pop();
+
+                if (typeof a !== 'number' || typeof b !== 'number') {
+                    return { error: 'Ekspresi tidak lengkap' };
+                }
+
+                if (item === '/' && b === 0) {
+                    return { error: 'Tidak bisa membagi dengan 0' };
+                }
+
+                let partial = 0;
+                switch (item) {
+                    case '+':
+                        partial = a + b;
+                        break;
+                    case '-':
+                        partial = a - b;
+                        break;
+                    case '*':
+                        partial = a * b;
+                        break;
+                    case '/':
+                        partial = a / b;
+                        break;
+                    default:
+                        return { error: 'Operator tidak dikenal' };
+                }
+                evaluationStack.push(partial);
+            }
+
+            if (evaluationStack.length !== 1) {
+                return { error: 'Ekspresi tidak lengkap' };
+            }
+
+            return { value: evaluationStack[0] };
+        }
+
+        function updateDisplay() {
+            const formattedCurrent = formatNumber(currentInput);
+            mainDisplay.textContent = formattedCurrent;
+
+            const expressionText = tokens.length === 0 && expression && shouldResetInput
+                ? expression
+                : buildExpressionPreview();
+
+            expressionDisplay.textContent = expressionText || '\u00A0';
+        }
+
+        function formatNumber(value) {
+            const valueStr = value.toString();
+            if (!/^[-]?\d*(\.\d*)?$/.test(valueStr)) {
+                return valueStr;
+            }
+
+            const isNegative = valueStr.startsWith('-');
+            const absoluteValue = isNegative ? valueStr.slice(1) : valueStr;
+            const [rawInt, rawDecimal] = absoluteValue.split('.');
+            const intPart = rawInt === '' ? '0' : rawInt;
+            const formattedInt = Number(intPart).toLocaleString('id-ID');
+            let formatted = formattedInt;
+
+            if (rawDecimal !== undefined) {
+                formatted += `.${rawDecimal}`;
+            } else if (absoluteValue.endsWith('.')) {
+                formatted += '.';
+            }
+
+            return isNegative && formatted !== '0' ? `-${formatted}` : formatted;
+        }
+
+        function triggerError(message) {
+            expression = '';
+            currentInput = message;
+            isErrorState = true;
+            tokens = [];
+            shouldResetInput = true;
+            updateDisplay();
+            return false;
+        }
+
+        function resetIfError() {
+            if (isErrorState) {
+                clearAll();
+            }
+        }
+
+        function prepareForNewEntry(preserveZero = false) {
+            if (!shouldResetInput) {
+                return;
+            }
+            currentInput = preserveZero ? '0' : '';
+            shouldResetInput = false;
+            if (tokens.length === 0) {
+                expression = '';
+            }
+        }
+
+        updateDisplay();
+        updateMemoryDisplay();
+    </script>
+</body>
+</html>
